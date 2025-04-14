@@ -1,0 +1,12 @@
+{
+  "playButton": "Play",
+  "leaderboardButton": "Leaderboard",
+  "levelSelectionPageTitle": "Level Selection",
+  "aboutPageTitle": "About",
+  "appDescription": "Color Memorizer Game\n",
+  "credits": "This mobile game challenges players to memorize a sequence of colors and reproduce it correctly across different levels.\n\nDeveloped by Tungatar Ersayyn and Roman Bushnyak in the scope of the course 'Crossplatform Development' at Astana IT University.\nMentor (Teacher): Assistant Professor Abzal Kyzyrkanov",
+  "leaderboardPageTitle": "Leaderboard",
+  "yourRank": "Your Rank",
+  "yourScore": "Your Score"
+}
+
