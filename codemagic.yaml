@@ -7,6 +7,10 @@ workflows:
     scripts:
       - name: Get dependencies
         script: flutter pub get
+
+      - name: Generate localization files
+        script: flutter gen-l10n
+
       - name: Build .app for iOS Simulator
         script: flutter build ios --simulator
     artifacts:
