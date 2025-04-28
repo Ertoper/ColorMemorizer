@@ -1,4 +1,11 @@
 {
+  "@@locale": "ru",
+  "settingsTitle": "Настройки",
+  "darkMode": "Темный режим",
+  "language": "Язык",
+  "english": "Английский",
+  "russian": "Русский",
+  "kazakh": "Казахский",
   "playButton": "Играть",
   "leaderboardButton": "Таблица лидеров",
   "levelSelectionPageTitle": "Выбор уровня",

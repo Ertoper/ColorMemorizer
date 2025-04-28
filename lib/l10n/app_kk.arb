@@ -1,4 +1,11 @@
 {
+  "@@locale": "kk",
+  "settingsTitle": "Параметрлер",
+  "darkMode": "Қараңғы режим",
+  "language": "Тіл",
+  "english": "Ағылшын",
+  "russian": "Орыс",
+  "kazakh": "Қазақ",
   "playButton": "Ойнау",
   "leaderboardButton": "Жетістік кестесі",
   "levelSelectionPageTitle": "Деңгей таңдау",

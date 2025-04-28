@@ -1,4 +1,11 @@
 {
+  "@@locale": "en",
+  "settingsTitle": "Settings",
+  "darkMode": "Dark Mode",
+  "language": "Language",
+  "english": "English",
+  "russian": "Russian",
+  "kazakh": "Kazakh",
   "playButton": "Play",
   "leaderboardButton": "Leaderboard",
   "levelSelectionPageTitle": "Level Selection",
