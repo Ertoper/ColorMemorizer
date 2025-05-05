@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'color_sequence_game_page.dart'; //  Import the new page
 
 class LevelSelectionPage extends StatelessWidget {
   final int numberOfLevels = 30;
@@ -48,7 +49,15 @@ class LevelSelectionPage extends StatelessWidget {
                         final levelNumber = index + 1;
                         return ElevatedButton(
                           onPressed: () {
-                            print('Level $levelNumber selected');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ColorSequenceGamePage(
+                                      level: levelNumber,
+                                    ),
+                              ),
+                            );
                           },
                           child: Text('$levelNumber'),
                         );

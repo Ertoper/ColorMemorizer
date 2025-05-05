@@ -47,6 +47,7 @@ class _MainScreenState extends State<MainScreen> {
       onThemeChanged: widget.onChangeTheme,
       currentLocale: Localizations.localeOf(context),
       onLocaleChanged: widget.onChangeLocale,
+      onLogout: () {},
     );
   }
 

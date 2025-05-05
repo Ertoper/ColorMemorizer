@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "765152134631",
+    "project_id": "colormemorizer",
+    "storage_bucket": "colormemorizer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765152134631:android:fe90ad2393f91a74c6a942",
+        "android_client_info": {
+          "package_name": "com.example.color_memorizer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDibZ-q4dxaCJS-YU4fwUzeXUez7bZvNW8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
