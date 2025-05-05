@@ -88,8 +88,6 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonColor =
-        isDark ? const Color(0xFF001D3D) : const Color(0xFFFFC300);
 
     return Scaffold(
       body: Stack(
@@ -126,7 +124,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: ListTile(
                         leading: Icon(Icons.person, color: Colors.white),
                         title: Text(
-                          _currentUser!.email ?? '',
+                          _currentUser.email ?? '',
                           style: TextStyle(color: Colors.white),
                         ),
                         subtitle: Text(

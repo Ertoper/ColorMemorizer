@@ -74,12 +74,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _handleAuthStateChange(User? user) {
-    setState(() {
-      _currentUser = user;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
