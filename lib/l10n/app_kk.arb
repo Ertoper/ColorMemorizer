@@ -1,8 +1,8 @@
 {
   "@@locale": "kk",
   "settingsTitle": "Баптаулар",
-  "darkMode": "Қараңғы режим",
-  "language": "Тіл",
+  "darkModeLabel": "Қараңғы режим",
+  "languageLabel": "Тіл",
   "english": "Ағылшын",
   "russian": "Орыс",
   "kazakh": "Қазақ",
@@ -19,6 +19,7 @@
   "logoutConfirmTitle": "Шығуды растау",
   "logoutConfirmMessage": "Сіз шынымен шығуды қалайсыз ба?",
   "cancelButton": "Бас тарту",
+  "confirmButton": "Растау",
   "accountTitle": "Аккаунтыңыз",
   "loginTitle": "Кіру",
   "emailLabel": "Электрондық пошта",
@@ -39,8 +40,22 @@
   "loginInstead": "Тіркелгіңіз бар ма? Кіру",
   "watchSequence": "Реттілікті бақылаңыз!",
   "yourTurn": "Сіздің кезегіңіз!",
-  "correctNextRound": "Дұрыс! Келесі раундқа дайын болыңыз!",
+  "correctSequence": "Дұрыс! Келесі раундқа дайын болыңыз!",
   "gameOver": "Ойын аяқталды! Қайта көріңіз.",
   "level": "Деңгей",
-  "victory": "Құттықтаймыз! Сіз жеңдіңіз!"
+  "youWin": "Құттықтаймыз! Сіз жеңдіңіз!",
+  "loginToAccessFeature": "Бұл функцияны пайдалану үшін жүйеге кіріңіз.",
+  "settings": "Баптаулар",
+  "enterAsGuest": "Қонақ ретінде жалғастыру",
+  "noPlayers": "Әзірге ойыншылар жоқ",
+  "@noPlayers": {
+    "description": "Көшбасшылар тақтасы бос болған кезде көрсетілетін хабар."
+  },
+  "gameTitle": "Түстерді есте сақтау",
+  "playAgain": "Қайта ойнау",
+  "backToLevels": "Деңгейлерге қайту",
+  "welcomeText": "Қош келдіңіз Мастер",
+  "home": "Үй",
+  "about": "Қосымша туралы",
+  "timeLeft": "Уақыть қалды:"
 }

@@ -1,8 +1,8 @@
 {
   "@@locale": "en",
   "settingsTitle": "Settings",
-  "darkMode": "Dark Mode",
-  "language": "Language",
+  "darkModeLabel": "Dark Mode",
+  "languageLabel": "Language",
   "english": "English",
   "russian": "Russian",
   "kazakh": "Kazakh",
@@ -19,6 +19,7 @@
   "logoutConfirmTitle": "Confirm Logout",
   "logoutConfirmMessage": "Are you sure you want to log out?",
   "cancelButton": "Cancel",
+  "confirmButton": "Confirm",
   "accountTitle": "Your Account",
   "loginTitle": "Login",
   "emailLabel": "Email",
@@ -39,8 +40,22 @@
   "loginInstead": "Already have an account? Login instead",
   "watchSequence": "Watch the sequence!",
   "yourTurn": "Your turn!",
-  "correctNextRound": "Correct! Get ready for the next round!",
+  "correctSequence": "Correct! Get ready for the next round!",
   "gameOver": "Game Over! Try again.",
   "level": "Level",
-  "victory": "Congratulations! You won!"
+  "youWin": "Congratulations! You won!",
+  "loginToAccessFeature": "Please log in to access this feature.",
+  "settings": "Settings",
+  "enterAsGuest": "Continue as Guest",
+  "noPlayers": "No players yet",
+  "@noPlayers": {
+    "description": "Message displayed when the leaderboard is empty."
+  },
+  "gameTitle": "Color Memorizer",
+  "playAgain": "Play Again",
+  "backToLevels": "Back to Levels",
+  "welcomeText": "Welcome Master",
+  "home": "Home",
+  "about": "About",
+  "timeLeft": "Time left:"
 }

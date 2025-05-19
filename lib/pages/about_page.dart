@@ -26,12 +26,6 @@ class AboutPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppBar(
-                    title: Text(AppLocalizations.of(context)!.aboutPageTitle),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    foregroundColor: Colors.white,
-                  ),
                   Text(
                     AppLocalizations.of(context)!.appDescription,
                     style: const TextStyle(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'color_sequence_game_page.dart'; //  Import the new page
+import 'color_sequence_game_page.dart';
 
 class LevelSelectionPage extends StatelessWidget {
   final int numberOfLevels = 30;
@@ -59,6 +59,17 @@ class LevelSelectionPage extends StatelessWidget {
                               ),
                             );
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           child: Text('$levelNumber'),
                         );
                       },

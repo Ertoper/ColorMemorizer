@@ -1,8 +1,8 @@
 {
   "@@locale": "ru",
   "settingsTitle": "Настройки",
-  "darkMode": "Тёмная тема",
-  "language": "Язык",
+  "darkModeLabel": "Тёмная тема",
+  "languageLabel": "Язык",
   "english": "Английский",
   "russian": "Русский",
   "kazakh": "Казахский",
@@ -19,6 +19,7 @@
   "logoutConfirmTitle": "Подтвердите выход",
   "logoutConfirmMessage": "Вы уверены, что хотите выйти из аккаунта?",
   "cancelButton": "Отмена",
+  "confirmButton": "Подтвердить",
   "accountTitle": "Ваш аккаунт",
   "loginTitle": "Вход",
   "emailLabel": "Электронная почта",
@@ -39,8 +40,22 @@
   "loginInstead": "Уже есть аккаунт? Войти",
   "watchSequence": "Смотрите последовательность!",
   "yourTurn": "Ваш ход!",
-  "correctNextRound": "Правильно! Подготовьтесь к следующему раунду!",
+  "correctSequence": "Правильно! Подготовьтесь к следующему раунду!",
   "gameOver": "Игра окончена! Попробуйте снова.",
   "level": "Уровень",
-  "victory": "Поздравляем! Вы победили!"
+  "youWin": "Поздравляем! Вы победили!",
+  "loginToAccessFeature": "Пожалуйста, войдите в систему, чтобы получить доступ к этой функции.",
+  "settings": "Настройки",
+  "enterAsGuest": "Продолжить как гость",
+  "noPlayers": "Пока нет игроков",
+  "@noPlayers": {
+    "description": "Сообщение, отображаемое, когда таблица лидеров пуста."
+  },
+  "gameTitle": "Запомни цвет",
+  "playAgain": "Играть снова",
+  "backToLevels": "Назад к уровням",
+  "welcomeText": "Добро пожаловать, Мастер",
+  "home": "Главная",
+  "about": "О приложении",
+  "timeLeft": "осталось времени:"
 }

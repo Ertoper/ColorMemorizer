@@ -1,18 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LeaderboardPage extends StatelessWidget {
-  final List<Map<String, dynamic>> players = [
-    {'name': 'Aruzhan', 'score': 120},
-    {'name': 'Dias', 'score': 110},
-    {'name': 'Marat', 'score': 105},
-    {'name': 'Alina', 'score': 100},
-    {'name': 'Ersayyn', 'score': 95},
-  ];
+class LeaderboardPage extends StatefulWidget {
+  @override
+  _LeaderboardPageState createState() => _LeaderboardPageState();
+}
 
-  final String currentUser = 'You';
-  final int yourScore = 95;
-  final int yourPlace = 5;
+class _LeaderboardPageState extends State<LeaderboardPage> {
+  List<Map<String, dynamic>> players = [];
+  String currentUserEmail = '...'; // Changed to email
+  int yourScore = 0;
+  int yourPlace = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLeaderboard();
+  }
+
+  Future<void> _fetchLeaderboard() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .orderBy('score', descending: true)
+              .get();
+
+      players =
+          querySnapshot.docs.map((doc) {
+            return {
+              'email': doc['email'], // Changed to email
+              'score': doc['score'] ?? 0,
+              'uid': doc.id,
+            };
+          }).toList();
+
+      // Determine current user's rank and score
+      if (FirebaseAuth.instance.currentUser != null) {
+        currentUserEmail =
+            FirebaseAuth.instance.currentUser!.email ??
+            'You'; // Changed to email
+        for (int i = 0; i < players.length; i++) {
+          if (players[i]['uid'] == FirebaseAuth.instance.currentUser!.uid) {
+            yourScore = players[i]['score'];
+            yourPlace = i + 1;
+            break;
+          }
+        }
+      } else {
+        currentUserEmail = 'Guest';
+      }
+    } catch (e) {
+      print('Error fetching leaderboard: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,43 +118,63 @@ class LeaderboardPage extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: ListView.builder(
-                      itemCount: players.length,
-                      itemBuilder: (context, index) {
-                        final player = players[index];
-                        return Card(
-                          color:
-                              isDark
-                                  ? Colors.grey[900]
-                                  : Colors.white.withOpacity(0.8),
-                          child: ListTile(
-                            leading: Text(
-                              '#${index + 1}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
+                  child:
+                      _isLoading
+                          ? Center(child: CircularProgressIndicator())
+                          : players.isEmpty
+                          ? Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.noPlayers,
                             ),
-                            title: Text(
-                              player['name'],
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
+                          )
+                          : Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
                             ),
-                            trailing: Text(
-                              '${player['score']}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
+                            child: ListView.builder(
+                              itemCount: players.length,
+                              itemBuilder: (context, index) {
+                                final player = players[index];
+                                return Card(
+                                  color:
+                                      isDark
+                                          ? Colors.grey[900]
+                                          : Colors.white.withOpacity(0.8),
+                                  child: ListTile(
+                                    leading: Text(
+                                      '#${index + 1}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      player['email'], // Display email
+                                      style: TextStyle(
+                                        color:
+                                            isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      '${player['score']}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
               ],
             ),

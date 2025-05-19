@@ -7,12 +7,14 @@ class LoginPage extends StatefulWidget {
   final Function()? onLoginSuccess;
   final ValueChanged<Locale>? onLocaleChanged;
   final ValueChanged<bool>? onThemeChanged;
+  final VoidCallback? onEnterGuestMode; // Callback for guest mode
 
   const LoginPage({
     Key? key,
     this.onLoginSuccess,
     this.onLocaleChanged,
     this.onThemeChanged,
+    this.onEnterGuestMode,
   }) : super(key: key);
 
   @override
@@ -140,22 +142,22 @@ class _LoginPageState extends State<LoginPage> {
               _isLoading
                   ? CircularProgressIndicator()
                   : ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonColor,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 15,
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 15,
+                        ),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context)!.loginButton,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      AppLocalizations.of(context)!.loginButton,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                  ),
               TextButton(
                 onPressed: () {
                   Navigator.push(
@@ -164,6 +166,10 @@ class _LoginPageState extends State<LoginPage> {
                   );
                 },
                 child: Text(AppLocalizations.of(context)!.registerInstead),
+              ),
+              TextButton(
+                onPressed: widget.onEnterGuestMode, // Call the guest mode function
+                child: Text(AppLocalizations.of(context)!.enterAsGuest),
               ),
             ],
           ),

@@ -1,209 +1,218 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'pages/about_page.dart';
-import 'pages/settings_page.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'main_screen.dart';
+import 'pages/login_page.dart';
+import 'auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'pages/home_page.dart';
 import 'pages/level_selection_page.dart';
 import 'pages/leaderboard_page.dart';
-import 'pages/login_page.dart';
+import 'pages/about_page.dart';
 import 'pages/register_page.dart';
-import 'main_screen.dart';
+import 'pages/settings_page.dart';
+import 'package:hive_flutter/hive_flutter.dart'; // Import Hive
+import 'package:connectivity_plus/connectivity_plus.dart'; // Import Connectivity
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MyApp());
+  // Initialize Hive
+  await Hive.initFlutter();
+  // Open the boxes.  You will register adapters later.
+  await Hive.openBox<Map>('userSettings'); // For user preferences
+  await Hive.openBox<Map>('gameData'); // For game data
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('kk');
-  ThemeMode _themeMode = ThemeMode.system;
+  Locale? _currentLocale;
+  bool _isDarkMode = false;
+  final AuthService _authService = AuthService();
   User? _currentUser;
-
-  final List<Locale> _supportedLocales = [
-    const Locale('en'),
-    const Locale('ru'),
-    const Locale('kk'),
-  ];
+  bool _isGuestMode = false;
+  bool _isFirstLaunch = true;
+  //  Add Connectivity Subscription
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  bool _isOffline = false; // Track offline state
 
   @override
   void initState() {
     super.initState();
-    _setSystemLocale();
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      setState(() {
-        _currentUser = user;
-      });
-    });
+    _loadInitialSettings();
+    _setupConnectivityListener(); // Set up listener
   }
 
-  void _changeTheme(bool isDarkMode) {
-    setState(() {
-      _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-    });
-  }
+  //get user settings
+  Future<void> _loadInitialSettings() async {
+    final user = FirebaseAuth.instance.currentUser;
+    _currentUser = user;
 
-  void _changeLocale(Locale locale) {
-    setState(() {
-      _locale = locale;
-    });
-  }
-
-  void _setSystemLocale() {
-    Locale systemLocale = WidgetsBinding.instance.window.locale;
-    if (_supportedLocales.contains(systemLocale)) {
-      setState(() {
-        _locale = systemLocale;
-      });
+    if (user != null) {
+      final prefs = await _authService.loadUserPreferences(user.uid);
+      if (prefs != null) {
+        if (mounted) {
+          setState(() {
+            final lang = prefs['language'];
+            final theme = prefs['theme'];
+            _currentLocale = lang is String ? Locale(lang) : const Locale('en');
+            _isDarkMode = theme == 'dark';
+          });
+        }
+      }
     }
   }
 
-  void _cycleLocale() {
+  //listen to network changes
+  void _setupConnectivityListener() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      ConnectivityResult result,
+    ) {
+      setState(() {
+        _isOffline = result == ConnectivityResult.none;
+      });
+      if (!_isOffline) {
+        // When the connection is back, sync data.
+        _syncData(); //  Call sync function
+      }
+    });
+  }
+
+  //method to sync data
+  Future<void> _syncData() async {
+    //get the gameData box
+    final gameDataBox = Hive.box<Map>('gameData');
+    //get the user settings
+    final userSettingsBox = Hive.box<Map>('userSettings');
+
+    if (_currentUser != null) {
+      //sync game data
+      final localGameData = gameDataBox.get(_currentUser!.uid);
+      if (localGameData != null) {
+        try {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(_currentUser!.uid)
+              .update({'score': localGameData['score'] ?? 0});
+          gameDataBox.delete(_currentUser!.uid);
+        } catch (e) {
+          print("Error syncing game data: $e");
+        }
+      }
+
+      // Sync user settings (language, theme)
+      final localSettings = userSettingsBox.get(_currentUser!.uid);
+      if (localSettings != null) {
+        try {
+          await _authService.updateUserPreferences(
+            uid: _currentUser!.uid,
+            language: localSettings['language'],
+            theme: localSettings['theme'],
+          );
+          userSettingsBox.delete(_currentUser!.uid); // Clear after sync
+        } catch (e) {
+          print("Error syncing user settings: $e");
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel(); // Cancel the subscription
+    Hive.close(); // Close Hive
+    super.dispose();
+  }
+
+  void _changeLocale(Locale newLocale) {
     setState(() {
-      final currentIndex = _supportedLocales.indexOf(_locale);
-      _locale =
-          _supportedLocales[(currentIndex + 1) % _supportedLocales.length];
+      _currentLocale = newLocale;
+    });
+    if (_currentUser != null) {
+      _authService.saveUserPreference(
+        _currentUser!.uid,
+        'language',
+        newLocale.languageCode,
+      );
+    }
+  }
+
+  void _changeTheme(bool isDark) {
+    setState(() {
+      _isDarkMode = isDark;
+    });
+    if (_currentUser != null) {
+      _authService.saveUserPreference(
+        _currentUser!.uid,
+        'theme',
+        isDark ? 'dark' : 'light',
+      );
+    }
+  }
+
+  void _enterGuestMode() {
+    setState(() {
+      _isGuestMode = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Color Memorizer',
       debugShowCheckedModeBanner: false,
-      themeMode: _themeMode,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFFFC300),
-            foregroundColor: Colors.black,
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF001D3D),
-            foregroundColor: Colors.white,
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.grey[850],
-        ),
-      ),
-      locale: _locale,
-      supportedLocales: _supportedLocales,
+      theme:
+          _isDarkMode
+              ? ThemeData.dark(useMaterial3: true)
+              : ThemeData.light(useMaterial3: true),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-      localeResolutionCallback: (locale, supportedLocales) {
-        if (locale == null) return const Locale('kk');
-        for (var supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == locale.languageCode) {
-            return supportedLocale;
-          }
-        }
-        return const Locale('kk');
-      },
+      supportedLocales: const [Locale('en'), Locale('ru'), Locale('kk')],
+      locale: _currentLocale,
+      home:
+          _currentUser != null || _isGuestMode
+              ? MainScreen(
+                onDoubleTap: () {
+                  _changeLocale(
+                    _currentLocale == const Locale('en')
+                        ? const Locale('ru')
+                        : const Locale('en'),
+                  );
+                },
+                onChangeTheme: _changeTheme,
+                onChangeLocale: _changeLocale,
+                isGuestMode: _isGuestMode,
+                isOffline: _isOffline, // Pass offline status
+              )
+              : LoginPage(
+                onLoginSuccess: () {
+                  // After successful login, the authStateChanges listener will rebuild
+                  // and navigate to MainScreen automatically.
+                },
+                onLocaleChanged: _changeLocale,
+                onThemeChanged: _changeTheme,
+                onEnterGuestMode: _enterGuestMode,
+              ),
       routes: {
-        '/':
-            (context) =>
-                _currentUser == null
-                    ? LoginPage(
-                      onLoginSuccess: () {
-                        setState(() {
-                          _currentUser = FirebaseAuth.instance.currentUser;
-                        });
-                      },
-                    )
-                    : MainScreen(
-                      onDoubleTap: _cycleLocale,
-                      onChangeTheme: _changeTheme,
-                      onChangeLocale: _changeLocale,
-                    ),
-        '/home':
-            (context) => MainScreen(
-              onDoubleTap: _cycleLocale,
-              onChangeTheme: _changeTheme,
-              onChangeLocale: _changeLocale,
-            ),
-        '/about': (context) => AboutPage(),
-        '/settings':
-            (context) => SettingsPage(
-              isDarkMode: Theme.of(context).brightness == Brightness.dark,
-              onThemeChanged: _changeTheme,
-              currentLocale: Localizations.localeOf(context),
-              onLocaleChanged: _changeLocale,
-              onLogout: () {
-                FirebaseAuth.instance.signOut();
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                );
-              },
-            ),
-        '/level_select':
-            (context) =>
-                _currentUser == null
-                    ? LoginPage(
-                      onLoginSuccess: () {
-                        Navigator.pushReplacementNamed(
-                          context,
-                          '/level_select',
-                        );
-                      },
-                    )
-                    : LevelSelectionPage(),
-        '/leaderboard':
-            (context) =>
-                _currentUser == null
-                    ? LoginPage(
-                      onLoginSuccess: () {
-                        Navigator.pushReplacementNamed(context, '/leaderboard');
-                      },
-                    )
-                    : LeaderboardPage(),
-        '/login':
-            (context) => LoginPage(
-              onLoginSuccess: () {
-                setState(() {
-                  _currentUser = FirebaseAuth.instance.currentUser;
-                });
-                Navigator.pushReplacementNamed(context, '/home');
-              },
-            ),
-        '/register':
-            (context) => RegisterPage(
-              onRegisterSuccess: () {
-                setState(() {
-                  _currentUser = FirebaseAuth.instance.currentUser;
-                });
-                Navigator.pushReplacementNamed(context, '/home');
-              },
-            ),
+        '/level_select': (context) => LevelSelectionPage(),
+        '/leaderboard': (context) => LeaderboardPage(),
+        '/login': (context) => LoginPage(),
       },
-      initialRoute: '/',
     );
   }
 }

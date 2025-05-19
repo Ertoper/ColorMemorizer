@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hive/hive.dart';
 
 class ColorSequenceGamePage extends StatefulWidget {
   final int level;
@@ -14,9 +17,7 @@ class ColorSequenceGamePage extends StatefulWidget {
 }
 
 class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
-  List<Color> sequence = [];
-  List<Color> playerSequence = [];
-  List<Color> availableColors = [
+  final List<Color> availableColors = [
     Colors.red,
     Colors.green,
     Colors.blue,
@@ -24,165 +25,249 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
     Colors.purple,
     Colors.orange,
   ];
+
+  List<Color> sequence = [];
+  List<Color> playerSequence = [];
+
   int sequenceLength = 3;
   bool isPlayerTurn = false;
   bool isShowingSequence = true;
   String message = "";
+
   bool _initialized = false;
+
   int _roundsCompleted = 0;
-  final int _totalRounds = 3; // Define the total number of rounds
+  final int _totalRounds = 3;
+  int _playerScore = 0;
+
+  final Random _random = Random();
+
+  Timer? _sequenceTimer;
+  Timer? _levelTimer;
+
+  int _sequenceIndex = 0;
+  int _levelTimeLeft = 0;
+
+  // Таймеры для каждого раунда (уменьшающееся время)
+  final List<int> _roundTimers = [
+    10,
+    8,
+    6,
+  ]; // Можно расширить или вычислять динамически
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     if (!_initialized) {
+      _initGame();
       _initialized = true;
-      _startGame();
     }
   }
 
-  int _calculateSequenceLength(int level) {
-    if (level <= 5) return 3;
-    if (level <= 10) return 4;
-    if (level <= 15) return 5;
-    if (level <= 20) return 6;
-    return 7;
+  @override
+  void dispose() {
+    _sequenceTimer?.cancel();
+    _levelTimer?.cancel();
+    super.dispose();
   }
 
-  int _calculateColorOptions(int level) {
-    if (level <= 5) return 4;
-    if (level <= 10) return 5;
-    return 6;
-  }
-
-  void _startGame() {
-    sequenceLength = _calculateSequenceLength(widget.level);
-    int colorOptionsCount = _calculateColorOptions(widget.level);
-    availableColors = availableColors.sublist(0, colorOptionsCount);
-
+  void _initGame() {
+    sequenceLength = 3 + (widget.level ~/ 10);
     sequence.clear();
     playerSequence.clear();
+
+    _playerScore = 0;
+    _roundsCompleted = 0;
+    _sequenceIndex = 0;
+
+    message = "";
     isPlayerTurn = false;
     isShowingSequence = true;
-    message = AppLocalizations.of(context)!.watchSequence;
-    _roundsCompleted = 0;
 
-    for (int i = 0; i < sequenceLength; i++) {
-      sequence.add(availableColors[Random().nextInt(availableColors.length)]);
-    }
-
-    _showSequence();
+    _generateSequence();
   }
 
-  Future<void> _showSequence() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // Initial delay
+  void _startLevelTimer() {
+    _levelTimer?.cancel();
 
-    for (int i = 0; i < sequence.length; i++) {
-      if (!mounted) return;
-      setState(() {
-        message = AppLocalizations.of(context)!.watchSequence;
-      });
+    // Время таймера для текущего раунда (если раунд больше чем список, берём минимальное)
+    _levelTimeLeft =
+        _roundsCompleted < _roundTimers.length
+            ? _roundTimers[_roundsCompleted]
+            : _roundTimers.last;
 
-      await Future.delayed(const Duration(milliseconds: 700));
-      if (!mounted) return;
-      setState(() {
-        playerSequence.add(sequence[i]);
-      });
+    _levelTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_levelTimeLeft <= 0) {
+        timer.cancel();
+        _gameOver();
+      } else {
+        setState(() => _levelTimeLeft--);
+      }
+    });
+  }
 
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!mounted) return;
-      setState(() {
-        playerSequence.clear();
-      });
-
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (!mounted) return;
+  void _generateSequence() {
+    sequence.clear();
+    for (int i = 0; i < sequenceLength; i++) {
+      sequence.add(availableColors[_random.nextInt(availableColors.length)]);
     }
+    if (mounted) {
+      setState(() {
+        isShowingSequence = true;
+        _sequenceIndex = 0;
+        isPlayerTurn = false;
+        message = "";
+      });
+    }
+    _startSequenceTimer();
+  }
 
-    if (!mounted) return;
-    setState(() {
-      isPlayerTurn = true;
-      isShowingSequence = false;
-      playerSequence.clear();
-      message = AppLocalizations.of(context)!.yourTurn;
+  void _startSequenceTimer() {
+    _sequenceTimer?.cancel();
+    _sequenceIndex = 0;
+
+    _sequenceTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_sequenceIndex < sequence.length) {
+        if (mounted) setState(() => _sequenceIndex++);
+      } else {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            isShowingSequence = false;
+            isPlayerTurn = true;
+            message = AppLocalizations.of(context)!.yourTurn;
+            playerSequence.clear();
+          });
+          _startLevelTimer(); // Запускаем таймер только когда ход игрока
+        }
+      }
     });
   }
 
   void _handleColorTap(Color color) {
-    if (!isPlayerTurn) return;
+    if (!isPlayerTurn || playerSequence.length >= sequence.length) return;
 
-    setState(() {
-      playerSequence.add(color);
-    });
+    setState(() => playerSequence.add(color));
+    _checkSequence();
+  }
 
-    if (playerSequence.length > sequence.length) {
-      _endRound(false);
+  void _checkSequence() {
+    if (playerSequence.last != sequence[playerSequence.length - 1]) {
+      _levelTimer?.cancel();
+      _gameOver();
       return;
     }
 
-    for (int i = 0; i < playerSequence.length; i++) {
-      if (playerSequence[i] != sequence[i]) {
-        _endRound(false);
-        return;
-      }
-    }
-
     if (playerSequence.length == sequence.length) {
-      _endRound(true);
+      _levelTimer?.cancel();
+
+      _playerScore += sequence.length * 10;
+      setState(() => message = AppLocalizations.of(context)!.correctSequence);
+
+      _roundsCompleted++;
+
+      if (_roundsCompleted < _totalRounds) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) _generateSequence();
+        });
+      } else {
+        _gameWon();
+      }
     }
   }
 
-  void _endRound(bool success) {
-    if (!mounted) return;
-
+  void _gameOver() {
+    _updateUserScore(_playerScore);
     setState(() {
+      message = AppLocalizations.of(context)!.gameOver;
       isPlayerTurn = false;
-      if (success) {
-        _roundsCompleted++;
-        if (_roundsCompleted < _totalRounds) {
-          message = AppLocalizations.of(context)!.correctNextRound;
-          if (sequence.length < 5) {
-            sequence.add(
-              availableColors[Random().nextInt(availableColors.length)],
-            );
-          }
-          playerSequence.clear();
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) {
-              _showSequence();
-            }
-          });
-        } else {
-          message = AppLocalizations.of(context)!.victory;
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              Navigator.pop(context);
-            }
-          });
-        }
-      } else {
-        message = AppLocalizations.of(context)!.gameOver;
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.pop(context);
-          }
-        });
-      }
+      isShowingSequence = false;
     });
+    _showGameOverDialog();
+  }
+
+  void _gameWon() {
+    _updateUserScore(_playerScore);
+    setState(() {
+      message = AppLocalizations.of(context)!.youWin;
+      isPlayerTurn = false;
+      isShowingSequence = false;
+    });
+    _showGameOverDialog();
+  }
+
+  Future<void> _updateUserScore(int points) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final uid = user.uid;
+      final gameDataBox = Hive.box<Map>('gameData');
+
+      try {
+        Map? localGameData = gameDataBox.get(uid);
+        int currentScore = localGameData?['score'] ?? 0;
+        int newScore = currentScore + points;
+
+        await gameDataBox.put(uid, {'score': newScore});
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+          'score': newScore,
+        });
+      } catch (e) {
+        print('Error updating score: $e');
+      }
+    }
+  }
+
+  void _showGameOverDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.black87,
+          title: Text(message, style: const TextStyle(color: Colors.white)),
+          content: Text(
+            "${AppLocalizations.of(context)!.yourScore}: $_playerScore",
+            style: const TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _initGame();
+              },
+              child: Text(
+                AppLocalizations.of(context)!.playAgain,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                AppLocalizations.of(context)!.backToLevels,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildColorButton(Color color) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: () => _handleColorTap(color),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            shape: const CircleBorder(),
-          ),
-          child: const SizedBox.shrink(),
+    return GestureDetector(
+      onTap: () => _handleColorTap(color),
+      child: Container(
+        width: 40,
+        height: 40,
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border:
+              isPlayerTurn ? Border.all(color: Colors.white, width: 2) : null,
         ),
       ),
     );
@@ -190,17 +275,18 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("${AppLocalizations.of(context)!.level} ${widget.level}"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: Text(AppLocalizations.of(context)!.gameTitle),
+        backgroundColor: Colors.black87,
       ),
       body: Stack(
         children: [
           Positioned.fill(
             child: Image.asset(
-              Theme.of(context).brightness == Brightness.dark
+              isDark
                   ? 'assets/dark-background.png'
                   : 'assets/light-background.png',
               fit: BoxFit.cover,
@@ -213,40 +299,41 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                Text(
+                  message,
+                  style: const TextStyle(fontSize: 24, color: Colors.white),
                 ),
                 const SizedBox(height: 20),
+                Text(
+                  '${AppLocalizations.of(context)!.timeLeft}: $_levelTimeLeft',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children:
-                      playerSequence.map((color) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                  children: List.generate(sequence.length, (index) {
+                    Color displayColor = Colors.grey;
+                    if (isShowingSequence && index < _sequenceIndex) {
+                      displayColor = sequence[index];
+                    } else if (!isShowingSequence &&
+                        index < playerSequence.length) {
+                      displayColor = playerSequence[index];
+                    }
+                    return Container(
+                      width: 40,
+                      height: 40,
+                      margin: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: displayColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    );
+                  }),
                 ),
                 const SizedBox(height: 50),
                 if (isPlayerTurn)
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       (availableColors.length / 2).ceil(),
                       (rowIndex) {
@@ -263,6 +350,11 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
                       },
                     ),
                   ),
+                const SizedBox(height: 20),
+                Text(
+                  '${AppLocalizations.of(context)!.yourScore}: $_playerScore',
+                  style: const TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ],
             ),
           ),

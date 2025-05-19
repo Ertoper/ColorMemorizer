@@ -1,4 +1,3 @@
-//  home_page.dart (Modified)
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -6,12 +5,14 @@ class HomePage extends StatelessWidget {
   final VoidCallback onDoubleTap;
   final ValueChanged<bool> onChangeTheme;
   final ValueChanged<Locale> onChangeLocale;
+  final bool isOffline;
 
   const HomePage({
     Key? key,
     required this.onDoubleTap,
     required this.onChangeTheme,
     required this.onChangeLocale,
+    required this.isOffline,
   }) : super(key: key);
 
   @override
@@ -41,45 +42,28 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    text: TextSpan(
                       children: [
                         TextSpan(
-                          text: 'C',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        TextSpan(
-                          text: 'o',
-                          style: TextStyle(color: Colors.green),
-                        ),
-                        TextSpan(
-                          text: 'l',
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                        TextSpan(
-                          text: 'o',
-                          style: TextStyle(color: Colors.yellow),
-                        ),
-                        TextSpan(
-                          text: 'r',
-                          style: TextStyle(color: Colors.purple),
-                        ),
-                        TextSpan(
-                          text: 'Memorizer',
-                          style: TextStyle(color: Colors.white),
+                          text: AppLocalizations.of(context)!.gameTitle,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber,
+                          ),
                         ),
                       ],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 50),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/level_select');
-                    },
+                    onPressed:
+                        isOffline
+                            ? null
+                            : () {
+                              Navigator.pushNamed(context, '/level_select');
+                            },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: buttonColor,
                       padding: const EdgeInsets.symmetric(
@@ -117,6 +101,14 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (isOffline) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Offline: Leaderboard is not available offline.",
+                      style: TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
               ),
             ),

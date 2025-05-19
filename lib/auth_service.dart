@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive/hive.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -33,10 +34,20 @@ class AuthService {
         password: password,
       );
 
-      // Create user settings document
+      // Create user settings document with defaults
       await _firestore.collection('users').doc(result.user!.uid).set({
-        'theme': 'light', // default theme
-        'language': 'en', // default language
+        'email': email,
+        'language': 'en',
+        'theme': 'light',
+        'score': 0,
+      });
+      //save to hive
+      final userSettingsBox = Hive.box<Map>('userSettings');
+      await userSettingsBox.put(result.user!.uid, {
+        'email': email,
+        'language': 'en',
+        'theme': 'light',
+        'score': 0,
       });
 
       return result.user;
@@ -47,24 +58,42 @@ class AuthService {
   }
 
   // Load user preferences
-  Future<Map<String, dynamic>?> loadUserPreferences(String uid) async {
+  Future<Map?> loadUserPreferences(String uid) async {
     try {
+      //first check hive
+      final userSettingsBox = Hive.box<Map>('userSettings');
+      final localSettings = userSettingsBox.get(uid);
+      if (localSettings != null) {
+        return localSettings;
+      }
+
       DocumentSnapshot doc =
           await _firestore.collection('users').doc(uid).get();
-      return doc.data() as Map<String, dynamic>?;
+      final data = doc.data() as Map<String, dynamic>?;
+      if (data != null) {
+        await userSettingsBox.put(uid, data);
+      }
+      return data;
     } catch (e) {
       print('Load Preferences Error: $e');
       return null;
     }
   }
 
-  // Update user preferences
+  // Update multiple user preferences at once
   Future<void> updateUserPreferences({
     required String uid,
     String? language,
     String? theme,
   }) async {
     try {
+      //update hive
+      final userSettingsBox = Hive.box<Map>('userSettings');
+      final existingSettings = userSettingsBox.get(uid) ?? {};
+      if (language != null) existingSettings['language'] = language;
+      if (theme != null) existingSettings['theme'] = theme;
+      await userSettingsBox.put(uid, existingSettings);
+
       await _firestore.collection('users').doc(uid).update({
         if (language != null) 'language': language,
         if (theme != null) 'theme': theme,
@@ -74,10 +103,17 @@ class AuthService {
     }
   }
 
-  // Sign out
-  Future<void> signOut() async {
-    await _auth.signOut();
-  }
+  //  Save one user preference by key (used in your main.dart)
+  Future<void> saveUserPreference(String uid, String key, String value) async {
+    try {
+      final userSettingsBox = Hive.box<Map>('userSettings');
+      final existingSettings = userSettingsBox.get(uid) ?? {};
+      existingSettings[key] = value;
+      await userSettingsBox.put(uid, existingSettings);
 
-  User? getCurrentUser() => _auth.currentUser;
+      await _firestore.collection('users').doc(uid).update({key: value});
+    } catch (e) {
+      print('Save Preference Error: $e');
+    }
+  }
 }
