@@ -34,14 +34,12 @@ class AuthService {
         password: password,
       );
 
-      // Create user settings document with defaults
       await _firestore.collection('users').doc(result.user!.uid).set({
         'email': email,
         'language': 'en',
         'theme': 'light',
         'score': 0,
       });
-      //save to hive
       final userSettingsBox = Hive.box<Map>('userSettings');
       await userSettingsBox.put(result.user!.uid, {
         'email': email,
@@ -57,10 +55,8 @@ class AuthService {
     }
   }
 
-  // Load user preferences
   Future<Map?> loadUserPreferences(String uid) async {
     try {
-      //first check hive
       final userSettingsBox = Hive.box<Map>('userSettings');
       final localSettings = userSettingsBox.get(uid);
       if (localSettings != null) {
@@ -80,14 +76,12 @@ class AuthService {
     }
   }
 
-  // Update multiple user preferences at once
   Future<void> updateUserPreferences({
     required String uid,
     String? language,
     String? theme,
   }) async {
     try {
-      //update hive
       final userSettingsBox = Hive.box<Map>('userSettings');
       final existingSettings = userSettingsBox.get(uid) ?? {};
       if (language != null) existingSettings['language'] = language;
@@ -103,7 +97,6 @@ class AuthService {
     }
   }
 
-  //  Save one user preference by key (used in your main.dart)
   Future<void> saveUserPreference(String uid, String key, String value) async {
     try {
       final userSettingsBox = Hive.box<Map>('userSettings');

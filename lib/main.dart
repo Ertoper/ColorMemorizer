@@ -14,18 +14,16 @@ import 'pages/leaderboard_page.dart';
 import 'pages/about_page.dart';
 import 'pages/register_page.dart';
 import 'pages/settings_page.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // Import Hive
-import 'package:connectivity_plus/connectivity_plus.dart'; // Import Connectivity
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Initialize Hive
   await Hive.initFlutter();
-  // Open the boxes.  You will register adapters later.
-  await Hive.openBox<Map>('userSettings'); // For user preferences
-  await Hive.openBox<Map>('gameData'); // For game data
+  await Hive.openBox<Map>('userSettings');
+  await Hive.openBox<Map>('gameData');
   runApp(const MyApp());
 }
 
@@ -43,18 +41,16 @@ class _MyAppState extends State<MyApp> {
   User? _currentUser;
   bool _isGuestMode = false;
   bool _isFirstLaunch = true;
-  //  Add Connectivity Subscription
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
-  bool _isOffline = false; // Track offline state
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
     _loadInitialSettings();
-    _setupConnectivityListener(); // Set up listener
+    _setupConnectivityListener();
   }
 
-  //get user settings
   Future<void> _loadInitialSettings() async {
     final user = FirebaseAuth.instance.currentUser;
     _currentUser = user;
@@ -74,7 +70,6 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  //listen to network changes
   void _setupConnectivityListener() {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
       ConnectivityResult result,
@@ -83,21 +78,16 @@ class _MyAppState extends State<MyApp> {
         _isOffline = result == ConnectivityResult.none;
       });
       if (!_isOffline) {
-        // When the connection is back, sync data.
-        _syncData(); //  Call sync function
+        _syncData();
       }
     });
   }
 
-  //method to sync data
   Future<void> _syncData() async {
-    //get the gameData box
     final gameDataBox = Hive.box<Map>('gameData');
-    //get the user settings
     final userSettingsBox = Hive.box<Map>('userSettings');
 
     if (_currentUser != null) {
-      //sync game data
       final localGameData = gameDataBox.get(_currentUser!.uid);
       if (localGameData != null) {
         try {
@@ -111,7 +101,6 @@ class _MyAppState extends State<MyApp> {
         }
       }
 
-      // Sync user settings (language, theme)
       final localSettings = userSettingsBox.get(_currentUser!.uid);
       if (localSettings != null) {
         try {
@@ -120,7 +109,7 @@ class _MyAppState extends State<MyApp> {
             language: localSettings['language'],
             theme: localSettings['theme'],
           );
-          userSettingsBox.delete(_currentUser!.uid); // Clear after sync
+          userSettingsBox.delete(_currentUser!.uid);
         } catch (e) {
           print("Error syncing user settings: $e");
         }
@@ -130,8 +119,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    _connectivitySubscription.cancel(); // Cancel the subscription
-    Hive.close(); // Close Hive
+    _connectivitySubscription.cancel();
+    Hive.close();
     super.dispose();
   }
 
@@ -197,13 +186,10 @@ class _MyAppState extends State<MyApp> {
                 onChangeTheme: _changeTheme,
                 onChangeLocale: _changeLocale,
                 isGuestMode: _isGuestMode,
-                isOffline: _isOffline, // Pass offline status
+                isOffline: _isOffline,
               )
               : LoginPage(
-                onLoginSuccess: () {
-                  // After successful login, the authStateChanges listener will rebuild
-                  // and navigate to MainScreen automatically.
-                },
+                onLoginSuccess: () {},
                 onLocaleChanged: _changeLocale,
                 onThemeChanged: _changeTheme,
                 onEnterGuestMode: _enterGuestMode,

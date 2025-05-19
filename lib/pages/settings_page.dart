@@ -3,7 +3,7 @@ import 'package:color_memorizer/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // Import Hive
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
@@ -95,14 +95,11 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  // Method to sync data
   Future<void> _syncData() async {
     if (_currentUser == null) return;
 
-    // Get the boxes
     final userSettingsBox = Hive.box<Map>('userSettings');
     final gameDataBox = Hive.box<Map>('gameData');
-    // Sync user settings
     final localSettings = userSettingsBox.get(_currentUser!.uid);
     if (localSettings != null) {
       try {
@@ -123,7 +120,6 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     }
 
-    // Sync Game Data
     final localGameData = gameDataBox.get(_currentUser!.uid);
     if (localGameData != null) {
       try {
@@ -248,21 +244,16 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      // Add sync button
                       onPressed: _isOffline ? null : _syncData,
-                      // Disable when offline
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _isOffline
-                                ? Colors.grey
-                                : Colors.blue, // Grey out when offline
+                        backgroundColor: _isOffline ? Colors.grey : Colors.blue,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 40,
                           vertical: 15,
                         ),
                       ),
                       child: Text(
-                        "Sync Data", // Button text
+                        "Sync Data",
                         style: const TextStyle(
                           fontSize: 18,
                           color: Colors.white,

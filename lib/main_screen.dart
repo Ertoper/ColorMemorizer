@@ -10,7 +10,7 @@ class MainScreen extends StatefulWidget {
   final ValueChanged<bool> onChangeTheme;
   final ValueChanged<Locale> onChangeLocale;
   final bool isGuestMode;
-  final bool isOffline; // Add this
+  final bool isOffline;
   const MainScreen({
     Key? key,
     required this.onDoubleTap,
@@ -67,14 +67,13 @@ class _MainScreenState extends State<MainScreen> {
               ? AppLocalizations.of(context)!.about
               : AppLocalizations.of(context)!.settings,
         ),
-        // Show offline indicator in AppBar
         bottom:
             widget.isOffline
                 ? const PreferredSize(
                   preferredSize: Size.fromHeight(20.0),
                   child: Center(
                     child: Text(
-                      "Offline Mode", //show offline
+                      "Offline Mode",
                       style: TextStyle(color: Colors.red),
                     ),
                   ),

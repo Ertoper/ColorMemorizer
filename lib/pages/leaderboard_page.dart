@@ -10,7 +10,7 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   List<Map<String, dynamic>> players = [];
-  String currentUserEmail = '...'; // Changed to email
+  String currentUserEmail = '...';
   int yourScore = 0;
   int yourPlace = 0;
   bool _isLoading = true;
@@ -36,17 +36,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       players =
           querySnapshot.docs.map((doc) {
             return {
-              'email': doc['email'], // Changed to email
+              'email': doc['email'],
               'score': doc['score'] ?? 0,
               'uid': doc.id,
             };
           }).toList();
 
-      // Determine current user's rank and score
       if (FirebaseAuth.instance.currentUser != null) {
-        currentUserEmail =
-            FirebaseAuth.instance.currentUser!.email ??
-            'You'; // Changed to email
+        currentUserEmail = FirebaseAuth.instance.currentUser!.email ?? 'You';
         for (int i = 0; i < players.length; i++) {
           if (players[i]['uid'] == FirebaseAuth.instance.currentUser!.uid) {
             yourScore = players[i]['score'];
@@ -152,7 +149,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                       ),
                                     ),
                                     title: Text(
-                                      player['email'], // Display email
+                                      player['email'],
                                       style: TextStyle(
                                         color:
                                             isDark

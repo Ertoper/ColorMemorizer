@@ -57,7 +57,10 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       } catch (e) {
         setState(() {
-          _errorMessage = AppLocalizations.of(context)!.registrationFailed + ": " + e.toString();
+          _errorMessage =
+              AppLocalizations.of(context)!.registrationFailed +
+              ": " +
+              e.toString();
         });
       } finally {
         setState(() {
@@ -70,7 +73,8 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonColor = isDark ? const Color(0xFF001D3D) : const Color(0xFFFFC300);
+    final buttonColor =
+        isDark ? const Color(0xFF001D3D) : const Color(0xFFFFC300);
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.registerTitle)),
       body: Padding(
@@ -122,7 +126,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!.confirmPasswordRequired;
+                    return AppLocalizations.of(
+                      context,
+                    )!.confirmPasswordRequired;
                   }
                   return null;
                 },
@@ -135,22 +141,22 @@ class _RegisterPageState extends State<RegisterPage> {
               _isLoading
                   ? CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: _isLoading ? null : _submit, // Disable when loading
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: buttonColor,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 50,
-                          vertical: 15,
-                        ),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!.registerButton,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonColor,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 15,
                       ),
                     ),
+                    child: Text(
+                      AppLocalizations.of(context)!.registerButton,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);

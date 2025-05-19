@@ -48,12 +48,7 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
   int _sequenceIndex = 0;
   int _levelTimeLeft = 0;
 
-  // Таймеры для каждого раунда (уменьшающееся время)
-  final List<int> _roundTimers = [
-    10,
-    8,
-    6,
-  ]; // Можно расширить или вычислять динамически
+  final List<int> _roundTimers = [10, 8, 6];
 
   @override
   void didChangeDependencies() {
@@ -90,7 +85,6 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
   void _startLevelTimer() {
     _levelTimer?.cancel();
 
-    // Время таймера для текущего раунда (если раунд больше чем список, берём минимальное)
     _levelTimeLeft =
         _roundsCompleted < _roundTimers.length
             ? _roundTimers[_roundsCompleted]
@@ -138,7 +132,7 @@ class _ColorSequenceGamePageState extends State<ColorSequenceGamePage> {
             message = AppLocalizations.of(context)!.yourTurn;
             playerSequence.clear();
           });
-          _startLevelTimer(); // Запускаем таймер только когда ход игрока
+          _startLevelTimer();
         }
       }
     });
