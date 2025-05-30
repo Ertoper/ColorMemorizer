@@ -1,0 +1,17 @@
+workflows:
+  ios-appetize:
+    name: Build iOS for Appetize
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Get dependencies
+        script: flutter pub get
+
+      - name: Generate localization files
+        script: flutter gen-l10n
+
+      - name: Build .app for iOS Simulator
+        script: flutter build ios --simulator
+    artifacts:
+      - build/ios/iphonesimulator/Runner.app
